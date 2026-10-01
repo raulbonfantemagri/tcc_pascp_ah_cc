@@ -37,11 +37,11 @@ for _ in range(O_count):
 #---------Formatação dos Dados para o PLI---------#
 
 # Identificador do nó artificial raiz
-r = -1
+r = 0
 
 # Lista de vértices reais e conjunto total V (isso inclui o r)
 real_nodes = list(G.adj_list.keys())
-V = real_nodes + [r]
+V = real_nodes
 
 # Conjunto de Arestas Reais (A) e Dicionário de Pesos/Custos (w)
 A = []

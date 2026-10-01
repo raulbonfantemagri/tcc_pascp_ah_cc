@@ -108,14 +108,29 @@ def optimize_skill_tree(V, A, R, r, P, W, n):
 
     modelo.optimize()
 
-    if modelo.getStatus() == "optimal":
-        print("Solução ótima encontrada.")
-    else:
-        print("Solução não ótima.")
+    # Printa o status
+    status = modelo.getStatus()
+    print(f"Status do modelo: {status}")
+
+    if modelo.getNSols() == 0:
+        print("Nenhuma solução ótima encontrada")
+        return modelo, {}, {}
     
     # Imprime as arestas escolhidas
     for e in A:
         if modelo.getVal(z[e]) > 0.5:
             print(f"Aresta escolhida: {e}")
 
-    return modelo, x, z
+    # Retorna solução
+    x_sol = {}
+    z_sol = {}
+
+    for v in x:
+        if modelo.getVal(x[v]) > 0.5:
+            x_sol[v] = 1
+
+    for e in z:
+        if modelo.getVal(z[e]) > 0.5:
+            z_sol[e] = 1
+
+    return modelo, x_sol, z_sol

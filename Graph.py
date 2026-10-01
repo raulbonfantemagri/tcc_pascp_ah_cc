@@ -18,7 +18,7 @@ class Graph:
         self.num_arcs = 0
         self.adj_list: Dict[int, List[AdjElement]] = {}
         self.node_weights: Dict[int, float] = {}
-        self._next_node_id = 0
+        self._next_node_id = 1
 
         for _ in range(num_nodes):
             self.add_node()
