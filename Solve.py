@@ -2,43 +2,48 @@ from pyscipopt import Model, quicksum
 
 def optimize_skill_tree(V, A, R, r, P, W, n):
 
-    # Inicia o SCIP
-    modelo = Model("SkillTree_PLI")
+    modelo = Model("CookieClicker_PrizeCollecting")
 
-    # Cria parametros
+    #--------- Parametros ---------#
+
     E = A + R
-    y = {e: 1 if e in A else 0 for e in E}
-    k = len(V)-1
+    k = len(V)
+
+    y = {} # y[v] = 1 se for Aresta Real, 0 se for Aresta Artificial
+    for e in E:
+        y[e] = 0
+        if e in A:
+            y[e] = 1
 
     #--------- Váriaveis ---------#
 
-    x = {} # x_v: se o vértice v foi coletado
+    x = {} # x[v] = 1 se a melhoria v foi comprada/coletada.
     for v in V:
-        if v != r:
-            x[v] = modelo.addVar(vtype="B", name=f"x_{v}")
+        x[v] = modelo.addVar(vtype="B", name=f"x_{v}")
 
-    z = {} # z_e: se a aresta e foi escolhida
+    z = {} # z[e] = 1 se a aresta fizer parte da progressão adquirida
     for e in E:
         z[e] = modelo.addVar(vtype="B", name=f"z_{e[0]}_{e[1]}")
 
-    f = {} # f_e: fluxo na aresta e
+    f = {} # f[e]: fluxo na aresta e
     for e in E:
         f[e] = modelo.addVar(vtype="C", lb=0, name=f"f_{e[0]}_{e[1]}")
 
     #--------- Função Objetivo ---------#
 
-    # 0. Maximiza o prêmio dos vértices coletados se não for artificial
+    # Maximiza os Prêmios(pesos dos vértices)
     modelo.setObjective(
-        quicksum(P[j] * z[(i, j)] * y[(i, j)] for (i, j) in A),
-        sense="maximize"
+        quicksum(P[v] * z[(u,v)] * y[(u,v)] for (u,v) in A),
+        sense="maximize",
     )
 
     #--------- Restrições ---------#
-    
-    # 1. Limita o custo total das arestas
+
+    # 1. Orçamento
+    # O custo total não pode passar de 'n'
     modelo.addCons(
         quicksum(W[e] * z[e] for e in A) <= n,
-        name="c1_budget"
+        name="c1_budget",
     )
 
     # 2. Raiz envia k unidades de fluxo
@@ -47,54 +52,51 @@ def optimize_skill_tree(V, A, R, r, P, W, n):
         name="c2_root_flow"
     )
 
-    # 3. Cada vértice consome 1 unidade de fluxo
+    # 3. Cada vértice consome exatamente 1 unidade
     for v in V:
-        if v != r:
-            modelo.addCons(
-                quicksum(f[e] for e in E if e[0] == v) == quicksum(f[e] for e in E if e[1] == v) - 1,
-                name=f"c3_flow_conservation_{v}"
-            )
+        modelo.addCons(quicksum(f[e] for e in E if e[1] == v) == quicksum(f[e] for e in E if e[0] == v)+1,
+            name=f"c3_flow_conservation_{v}"
+        )
 
-    # 4. Só passa fluxo em arco escolhido, limitado a k
+    # 4. Só passa fluxo em arco ativo
     for e in E:
-        modelo.addCons(
-            f[e] <= z[e] * k,
+        modelo.addCons(f[e] <= k * z[e],
             name=f"c4_flow_capacity_{e[0]}_{e[1]}"
         )
 
-    # 5. Vértice ligado por arco artificial à raiz não pode ter filhos
-    for i in V:
-        if i != r and (r, i) in R:
-            for j in V:
-                if (i, j) in A:
-                    modelo.addCons(
-                        z[(i, j)] <= 1 - z[(r, i)],
-                        name=f"c5_exclusion_{i}{j}"
-                    )
+    # 5. Arcos artificiais
+    for r, u in R:
+        for i, j in A:
+            if u == i:
+                modelo.addCons(
+                    z[(i, j)] <= 1 - z[(r, i)],
+                    name=f"c5_artificial_edge_{i}_{j}"
+                )
 
-    # 6. Cada vértice só pode ter exatamente um pai na solução
+    # 6. Vértice ligado por arco artificial não pode ter filhos
+    for i, j in R:
+        for i_, j_ in A:
+            if i_ == j:
+                modelo.addCons(
+                    z[(i_, j_)] <= 1 - z[(i, j)],
+                    name=f"c6_exclusion_{j}_{j_}"
+                )
+
+    # 7. Cada vértice só pode ter exatamente um pai na solução
     for v in V:
         if v != r:
             modelo.addCons(
-                quicksum(z[e] for e in E if e[1] == v) <= 1,
-                name=f"c6_in_degree_{v}"
+                quicksum(z[e] for e in E if e[1] == v) == 1,
+                name=f"c7_in_degree_{v}"
             )
 
-    # 7. A raiz possui exatamente um filho
-    modelo.addCons(
-        quicksum(z[e] for e in E if e[0] == r) == 1,
-        name="c7_root_out_degree"
-    )
-
-    # 8. Dependência dos vértices antecessores
-    for v in V:
-        if v != r:
-            ancestors = [i for (i, j) in A if j == v]
-            if ancestors:
-                modelo.addCons(
-                    quicksum(x[i] for i in ancestors) >= x[v] * len(ancestors),
-                    name=f"c8_ancestors_{v}"
-                )
+    # 8. Dependência dos vértices antecessores (pré-requisito)
+    for i, j in A:
+        if i != r:
+            modelo.addCons(
+                x[j] <= x[i],
+                name=f"c8_prerequisite_{i}_{j}"
+            )
 
     # 9. Se uma aresta ij for escolhida, o vértice j tem que ser coletado
     for j in V:
@@ -104,33 +106,58 @@ def optimize_skill_tree(V, A, R, r, P, W, n):
                 name=f"c9_link_{j}"
             )
 
+    # 10. Apenas um arco Real saindo da raiz
+    real_root_arcs = [
+        e for e in A
+        if e[0] == r
+    ]
+
+    if real_root_arcs:
+        modelo.addCons(
+            quicksum(z[e] for e in real_root_arcs) == 1,
+            name="c10_root_real_degree"
+        )
+    
     #--------- Otimização ---------#
 
+    modelo.writeProblem("modelo.lp")
     modelo.optimize()
 
-    # Printa o status
     status = modelo.getStatus()
     print(f"Status do modelo: {status}")
 
     if modelo.getNSols() == 0:
-        print("Nenhuma solução ótima encontrada")
-        return modelo, {}, {}
+        print("Nenhuma solução viável encontrada")
+        return modelo, {}, {}, {}, 0.0, 0.0
+
+    #--------- Solução ---------#
+
+    x_sol = {v: int(modelo.getVal(x[v]) > 0.5) for v in V}
+    z_sol = {e: int(modelo.getVal(z[e]) > 0.5) for e in E}
+
+    selected_vertices = [v for v in V if x_sol[v] == 1]
+    selected_real_edges = [e for e in A if z_sol[e] == 1]
+    selected_artificial_edges = [e for e in R if z_sol[e] == 1]
+
+    total_prize = sum(float(P.get(v, 0.0)) for v in selected_vertices)
+    total_cost = sum(float(W[(u, v)]) for (u, v) in selected_real_edges)
+
+    print(f"Prêmio total: {total_prize:.10g}")
+    print(f"Custo total: {total_cost:.10g}")
+    print()
+
+    print(f"Vértices adquiridos({len(selected_vertices)}):")
+    for v in selected_vertices:
+        print(f"  {v} (prêmio={P.get(v, 0.0)})")
+    print()
+
+    print(f"Arestas Reais adquiridas({len(selected_real_edges)}):")
+    for u, v in selected_real_edges:
+        print(f"  ({u}, {v}) (custo={W[(u, v)]})")
+    print()
     
-    # Imprime as arestas escolhidas
-    for e in A:
-        if modelo.getVal(z[e]) > 0.5:
-            print(f"Aresta escolhida: {e}")
+    print(f"Arestas Artificiais adquiridas({len(selected_artificial_edges)}):")
+    for u, v in selected_artificial_edges:
+        print(f"  ({u}, {v}) (custo={W[(u, v)]})")
 
-    # Retorna solução
-    x_sol = {}
-    z_sol = {}
-
-    for v in x:
-        if modelo.getVal(x[v]) > 0.5:
-            x_sol[v] = 1
-
-    for e in z:
-        if modelo.getVal(z[e]) > 0.5:
-            z_sol[e] = 1
-
-    return modelo, x_sol, z_sol
+    return modelo, x_sol, z_sol, selected_real_edges, total_prize, total_cost

@@ -2,23 +2,30 @@
 # substituir {budget} pela quantidade de heavenly chips ou apaga-lo para usar o padrão
 
 import sys
+
 from Graph import Graph as g
 from Graph import Arc as a
 import Solve as s
 
-# Leitura da entrada
+#--------- Argumentos/Globais ---------#
+
+# Orçamento
+ORCAMENTO = 1_000_000_000_000_000.0
+n = float(sys.argv[1]) if len(sys.argv) > 1 else ORCAMENTO
+
+#--------- Leitura da Entrada ---------#
+
 input_data = sys.stdin.read().split()
 it = iter(input_data)
 
 V_count = int(next(it))
 O_count = int(next(it))
 
-print(f"Nodes: {V_count}")
-print(f"Operations: {O_count}\n")
-
+r = 0 # Vértice Artificial Raiz
 G = g(V_count)
+G.add_node(r, 0.0)
 
-# Processa todas as operações de carregamento do grafo
+# Processa todas as operacoes do grafo.
 for _ in range(O_count):
     op = next(it)
 
@@ -34,42 +41,38 @@ for _ in range(O_count):
         w_val = float(next(it))
         G.insert_arc(a(v1, v2, w_val))
 
-#---------Formatação dos Dados para o PLI---------#
+#--------- Formatação para o PLI ---------#
 
-# Identificador do nó artificial raiz
-r = 0
+# Vértices e Pesos/Prêmios
+V = [v for v in G.adj_list if v != r]
+P = {v: G.get_node_weight(v) for v in V}
 
-# Lista de vértices reais e conjunto total V (isso inclui o r)
-real_nodes = list(G.adj_list.keys())
-V = real_nodes
-
-# Conjunto de Arestas Reais (A) e Dicionário de Pesos/Custos (w)
+# Arestas e Pesos/Custos do grafo.
 A = []
 W = {}
-
 for u in G.adj_list:
     for elem in G.adj_list[u]:
         e = (u, elem.destiny)
         A.append(e)
         W[e] = elem.weight
 
-# Conjunto de Arestas Artificiais (R) saindo da raiz 'r'
-R = [(r, v) for v in real_nodes]
-for e in R:
-    W[e] = 0.0
+# Arestas Artificiais
+R = []
+for v in V:
+    if v == 1:
+        continue
+    e = (r, v)
+    R.append(e)
+    W[e] = 0.0 
 
-# Dicionário de Prêmios/Pesos dos Vértices (p)
-P = {v: G.get_node_weight(v) for v in real_nodes}
+#--------- Chamada do PLI ---------#
 
-# Orçamento máximo (n)
-n = float(sys.argv[1]) if len(sys.argv) > 1 else 1000000.0
-
-print(f"Executando Otimização...")
-print(f"- Total de Vértices (V): {len(V)}")
-print(f"- Arestas Reais (A): {len(A)}")
-print(f"- Arestas Artificiais (R): {len(R)}")
+print("\n------------------------------------\n")
+print("Executando Otimização...")
+print(f"- Vértices (V): {len(V)}")
+print(f"- Arestas (A): {len(A)}")
+print(f"- Raiz (r): {r}")
 print(f"- Orçamento (n): {n}\n")
 
-# --------- Chamada do Modelo de Otimização --------- #
-
-modelo, x_vars, z_vars = s.optimize_skill_tree(V, A, R, r, P, W, n)
+#modelo, x_vars, selected_edges, total_prize, total_cost = 
+s.optimize_skill_tree(V,A,R,r,P,W,n)
