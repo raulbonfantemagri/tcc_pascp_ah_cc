@@ -135,7 +135,7 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
     x_sol = {v: int(modelo.getVal(x[v]) > 0.5) for v in V}
     z_sol = {e: int(modelo.getVal(z[e]) > 0.5) for e in E}
 
-    selected_vertices = [v for v in V if x_sol[v] == 1]
+    selected_vertices = {v for _,v in A if z_sol[_,v] == 1} - {u for _,u in R if z_sol[_,u] == 1}
     selected_real_edges = [e for e in A if z_sol[e] == 1]
     selected_artificial_edges = [e for e in R if z_sol[e] == 1]
 
