@@ -1,6 +1,6 @@
 from pyscipopt import Model, quicksum
 
-def optimize_skill_tree(V, A, R, r, P, W, n):
+def optimize_skill_tree(V, A, R, r, P, W, n, output):
 
     modelo = Model("CookieClicker_PrizeCollecting")
 
@@ -120,14 +120,14 @@ def optimize_skill_tree(V, A, R, r, P, W, n):
     
     #--------- Otimização ---------#
 
-    modelo.writeProblem("modelo.lp")
+    modelo.writeProblem("_modelo.lp")
     modelo.optimize()
 
     status = modelo.getStatus()
-    print(f"Status do modelo: {status}")
+    output.write(f"Status do modelo: {status}\n")
 
     if modelo.getNSols() == 0:
-        print("Nenhuma solução viável encontrada")
+        output.write("Nenhuma solução viável encontrada\n")
         return modelo, {}, {}, {}, 0.0, 0.0
 
     #--------- Solução ---------#
@@ -142,22 +142,16 @@ def optimize_skill_tree(V, A, R, r, P, W, n):
     total_prize = sum(float(P.get(v, 0.0)) for v in selected_vertices)
     total_cost = sum(float(W[(u, v)]) for (u, v) in selected_real_edges)
 
-    print(f"Prêmio total: {total_prize:.10g}")
-    print(f"Custo total: {total_cost:.10g}")
-    print()
+    output.write(f"Prêmio total: {total_prize:.10g}\n")
+    output.write(f"Custo total: {total_cost:.10g}\n")
 
-    print(f"Vértices adquiridos({len(selected_vertices)}):")
-    for v in selected_vertices:
-        print(f"  {v} (prêmio={P.get(v, 0.0)})")
-    print()
+    output.write(f"Vértices adquiridos({len(selected_vertices)}):\n")
+    output.write(f"\t{selected_vertices}\n")
 
-    print(f"Arestas Reais adquiridas({len(selected_real_edges)}):")
-    for u, v in selected_real_edges:
-        print(f"  ({u}, {v}) (custo={W[(u, v)]})")
-    print()
+    output.write(f"Arestas Reais adquiridas({len(selected_real_edges)}):\n")
+    output.write(f"\t{selected_real_edges}\n")
     
-    print(f"Arestas Artificiais adquiridas({len(selected_artificial_edges)}):")
-    for u, v in selected_artificial_edges:
-        print(f"  ({u}, {v}) (custo={W[(u, v)]})")
+    output.write(f"Arestas Artificiais adquiridas({len(selected_artificial_edges)}):\n")
+    output.write(f"\t{selected_artificial_edges}\n")
 
     return modelo, x_sol, z_sol, selected_real_edges, total_prize, total_cost

@@ -1,5 +1,4 @@
-# python3 Main.py {budget} < _in.txt > _out.txt
-# substituir {budget} pela quantidade de heavenly chips ou apaga-lo para usar o padrão
+# python3 Main.py < _in.txt > _solver.txt
 
 import sys
 
@@ -9,14 +8,18 @@ import Solve as s
 
 #--------- Argumentos/Globais ---------#
 
-# Orçamento
-ORCAMENTO = 1_000_000_000_000_000.0
-n = float(sys.argv[1]) if len(sys.argv) > 1 else ORCAMENTO
+_out = open("_out.txt","w")
+_out.write("Hello, World!\n")
 
 #--------- Leitura da Entrada ---------#
 
 input_data = sys.stdin.read().split()
 it = iter(input_data)
+
+I_count = int(next(it))
+instances = []
+for _ in range(I_count):
+    instances.append(int(next(it)))
 
 V_count = int(next(it))
 O_count = int(next(it))
@@ -67,12 +70,14 @@ for v in V:
 
 #--------- Chamada do PLI ---------#
 
-print("\n------------------------------------\n")
-print("Executando Otimização...")
-print(f"- Vértices (V): {len(V)}")
-print(f"- Arestas (A): {len(A)}")
-print(f"- Raiz (r): {r}")
-print(f"- Orçamento (n): {n}\n")
+_out.write("Grafo:\n")
+_out.write(f"- Vértices (V): {len(V)}\n")
+_out.write(f"- Arestas (A): {len(A)}\n")
+_out.write(f"- Raiz (r): {r}\n\n")
 
-#modelo, x_vars, selected_edges, total_prize, total_cost = 
-s.optimize_skill_tree(V,A,R,r,P,W,n)
+for i in range(I_count):
+    n = instances[i]
+    _out.write(f"Instancia_{i}:\n")
+    _out.write(f"Orçamento:{n}\n")
+    s.optimize_skill_tree(V,A,R,r,P,W,n,_out)
+    _out.write("\n")
