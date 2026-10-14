@@ -9,7 +9,7 @@ import Solve as s
 #--------- Argumentos/Globais ---------#
 
 _out = open("_out.txt","w")
-_out.write("Hello, World!\n")
+_out.write("\n")
 
 #--------- Leitura da Entrada ---------#
 
@@ -78,6 +78,6 @@ _out.write(f"- Raiz (r): {r}\n\n")
 for i in range(I_count):
     n = instances[i]
     _out.write(f"Instancia_{i}:\n")
-    _out.write(f"Orçamento:{n}\n")
+    _out.write(f"Orçamento: {n}\n")
     s.optimize_skill_tree(V,A,R,r,P,W,n,_out)
     _out.write("\n")
