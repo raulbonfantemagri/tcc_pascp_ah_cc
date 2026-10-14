@@ -91,29 +91,18 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
             )
 
     # 8. Dependência dos vértices antecessores (pré-requisito)
-    for v in V:
-        predecessors = [
-            i for (i, j) in A
-            if j == v and i != r
-        ]
-        if predecessors:  
+    for i, j in A:
+        if i != r:
             modelo.addCons(
-                quicksum(x[i] for i in predecessors) >= len(predecessors) * x[v],
-                name=f"c8_prerequisite_{v}"
+                x[j] <= x[i],
+                name=f"c8_dependency_{i}_{j}"
             )
-
-    # for i, j in A:
-    #     if i != r:
-    #         modelo.addCons(
-    #             x[j] <= x[i],
-    #             name=f"c8_dependency_{i}_{j}"
-    #         )
 
     # 9. Se uma aresta ij for escolhida, o vértice j tem que ser coletado
     for j in V:
         if j != r:
             modelo.addCons(
-                quicksum(z[e] for e in E if e[1] == j) <= x[j],
+                quicksum(z[e] for e in A if e[1] == j) <= x[j],
                 name=f"c9_link_{j}"
             )
 
