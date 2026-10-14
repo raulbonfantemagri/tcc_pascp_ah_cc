@@ -91,12 +91,23 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
             )
 
     # 8. Dependência dos vértices antecessores (pré-requisito)
-    for i, j in A:
-        if i != r:
+    for v in V:
+        predecessors = [
+            i for (i, j) in A
+            if j == v and i != r
+        ]
+        if predecessors:  
             modelo.addCons(
-                x[j] <= x[i],
-                name=f"c8_prerequisite_{i}_{j}"
+                quicksum(x[i] for i in predecessors) >= len(predecessors) * x[v],
+                name=f"c8_prerequisite_{v}"
             )
+
+    # for i, j in A:
+    #     if i != r:
+    #         modelo.addCons(
+    #             x[j] <= x[i],
+    #             name=f"c8_dependency_{i}_{j}"
+    #         )
 
     # 9. Se uma aresta ij for escolhida, o vértice j tem que ser coletado
     for j in V:
@@ -139,7 +150,7 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
     selected_real_edges = [e for e in A if z_sol[e] == 1]
     selected_artificial_edges = [e for e in R if z_sol[e] == 1]
 
-    total_prize = sum(float(P.get(v, 0.0)) for v in selected_vertices)
+    total_prize = sum(float(P.get(v, 0.0)) for v in selected_vertices) - len(selected_vertices)
     total_cost = sum(float(W[(u, v)]) for (u, v) in selected_real_edges)
 
     output.write(f"Prêmio total: {total_prize:.10g}\n")
