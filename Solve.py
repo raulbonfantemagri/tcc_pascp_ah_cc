@@ -98,25 +98,13 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
                 name=f"c8_dependency_{i}_{j}"
             )
 
-    # 9. Se uma aresta ij for escolhida, o vértice j tem que ser coletado
+    # 9. Se uma aresta real ij for escolhida, o vértice j tem que ser coletado
     for j in V:
         if j != r:
             modelo.addCons(
                 quicksum(z[e] for e in A if e[1] == j) <= x[j],
                 name=f"c9_link_{j}"
             )
-
-    # 10. Apenas um arco Real saindo da raiz
-    real_root_arcs = [
-        e for e in A
-        if e[0] == r
-    ]
-
-    if real_root_arcs:
-        modelo.addCons(
-            quicksum(z[e] for e in real_root_arcs) == 1,
-            name="c10_root_real_degree"
-        )
     
     #--------- Otimização ---------#
 

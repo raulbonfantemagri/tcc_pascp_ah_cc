@@ -35,7 +35,7 @@ for _ in range(O_count):
     if op == 'W':
         v = int(next(it))
         w_val = float(next(it))
-        G.set_node_weight(v, w_val+1) #+1 só pra n ter ganho negativo
+        G.set_node_weight(v, w_val+1) #+1 só pra n ter ganho zerado
         continue
 
     if op == 'I':
