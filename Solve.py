@@ -9,11 +9,11 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
     E = A + R
     k = len(V)
 
-    y = {} # y[v] = 1 se for Aresta Real, 0 se for Aresta Artificial
-    for e in E:
-        y[e] = 0
-        if e in A:
-            y[e] = 1
+    # y = {} # y[v] = 1 se for Aresta Real, 0 se for Aresta Artificial
+    # for e in E:
+    #     y[e] = 0
+    #     if e in A:
+    #         y[e] = 1
 
     #--------- Váriaveis ---------#
 
@@ -33,7 +33,7 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
 
     # Maximiza os Prêmios(pesos dos vértices)
     modelo.setObjective(
-        quicksum(P[v] * z[(u,v)] * y[(u,v)] for (u,v) in A),
+        quicksum(P[v] * z[(u,v)] for (u,v) in A),
         sense="maximize",
     )
 
@@ -127,11 +127,12 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
     selected_real_edges = [e for e in A if z_sol[e] == 1]
     selected_artificial_edges = [e for e in R if z_sol[e] == 1]
 
-    total_prize = sum(float(P.get(v, 0.0)) for v in selected_vertices) - len(selected_vertices)
-    total_cost = sum(float(W[(u, v)]) for (u, v) in selected_real_edges)
+    total_prize = sum(P.get(v, 0.0) for v in selected_vertices) - len(selected_vertices)
+    total_cost = sum(W[(u, v)] for (u, v) in selected_real_edges)
 
     output.write(f"Prêmio total: {total_prize:.10g}\n")
     output.write(f"Custo total: {total_cost:.10g}\n")
+    output.write(f"Orçamento restante: {n - total_cost}\n")
 
     output.write(f"Vértices adquiridos({len(selected_vertices)}):\n")
     output.write(f"\t{selected_vertices}\n")

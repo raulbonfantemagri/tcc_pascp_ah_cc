@@ -41,7 +41,7 @@ for _ in range(O_count):
     if op == 'I':
         v1 = int(next(it))
         v2 = int(next(it))
-        w_val = float(next(it))
+        w_val = int(next(it))
         G.insert_arc(a(v1, v2, w_val))
 
 #--------- Formatação para o PLI ---------#
