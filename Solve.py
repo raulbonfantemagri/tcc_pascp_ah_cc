@@ -9,12 +9,6 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
     E = A + R
     k = len(V)
 
-    # y = {} # y[v] = 1 se for Aresta Real, 0 se for Aresta Artificial
-    # for e in E:
-    #     y[e] = 0
-    #     if e in A:
-    #         y[e] = 1
-
     #--------- Váriaveis ---------#
 
     x = {} # x[v] = 1 se a melhoria v foi comprada/coletada.
