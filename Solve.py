@@ -1,9 +1,11 @@
 from pyscipopt import Model, quicksum
+from decimal import Decimal
 
-def optimize_skill_tree(V, A, R, r, P, W, n, output):
+def optimize_skill_tree(V, A, R, r, P, P0, W, W0, n, output):
 
     modelo = Model("CookieClicker_PrizeCollecting")
-
+    modelo.printVersion()
+    
     #--------- Parametros ---------#
 
     E = A + R
@@ -121,15 +123,38 @@ def optimize_skill_tree(V, A, R, r, P, W, n, output):
     selected_real_edges = [e for e in A if z_sol[e] == 1]
     selected_artificial_edges = [e for e in R if z_sol[e] == 1]
 
-    total_prize = sum(P.get(v, 0.0) for v in selected_vertices) - len(selected_vertices)
-    total_cost = sum(W[(u, v)] for (u, v) in selected_real_edges)
+    total_prize_check_1 = 0
+    total_prize_check_2 = 0
+    for (u,v) in A:
+        if modelo.getVal(z[(u,v)]) > 0.5:
+            total_prize_check_1 += P[v]
+        total_prize_check_2 += P[v] * modelo.getVal(z[(u,v)])
+    output.write(f"Prêmio total check 1: {Decimal(total_prize_check_1)}\n")
+    output.write(f"Prêmio total check 2: {Decimal(total_prize_check_2)}\n")
 
-    output.write(f"Prêmio total: {total_prize:.10g}\n")
-    output.write(f"Custo total: {total_cost:.10g}\n")
+    total_prize_orig_check_1 = 0
+    total_prize_orig_check_2 = 0
+    for (u,v) in A:
+        if modelo.getVal(z[(u,v)]) > 0.5:
+            total_prize_orig_check_1 += P0[v]
+        total_prize_orig_check_2 += P0[v] * modelo.getVal(z[(u,v)])
+    output.write(f"Prêmio total original check 1: {Decimal(total_prize_orig_check_1)}\n")
+    output.write(f"Prêmio total original check 2: {Decimal(total_prize_orig_check_2)}\n")
+
+    total_prize = sum(P.get(v, 0.0) for v in selected_vertices)
+    total_prize_orig = sum(P0.get(v, 0.0) for v in selected_vertices)
+    total_cost = sum(W[(u, v)] for (u, v) in selected_real_edges)
+    total_cost_orig = sum(W0[(u, v)] for (u, v) in selected_real_edges)
+
+    output.write(f"Prêmio total: {Decimal(total_prize)}\n")
+    output.write(f"Custo total: {Decimal(total_cost)}\n")
     output.write(f"Orçamento restante: {n - total_cost}\n")
 
+    output.write(f"Prêmio total original: {Decimal(total_prize_orig)}\n")
+    output.write(f"Custo total original: {Decimal(total_cost_orig)}\n")
+
     output.write(f"Vértices adquiridos({len(selected_vertices)}):\n")
-    output.write(f"\t{selected_vertices}\n")
+    output.write(f"\t{sorted(selected_vertices)}\n")
 
     output.write(f"Arestas Reais adquiridas({len(selected_real_edges)}):\n")
     output.write(f"\t{selected_real_edges}\n")
